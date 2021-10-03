@@ -282,13 +282,19 @@ def numFrontier(player, board):
      if r > 0 and c > 0 and r < 7 and c < 7 and board[r][c] == player:
        if isFrontier([r,c], board): n+=1
   return n
-
 def numInterior(player, board):
   n = 0
   for r in range(0, len(board)):
    for c in range(0, len(board[r])):
      if r > 0 and c > 0 and r < 7 and c < 7 and board[r][c] == player:
        if not isFrontier([r,c], board): n+=1
+  return n
+
+# RETURNS HOW MANY CORNERS A PLAYER OWNS 
+def numCorners(player, board):
+  n = 0
+  for i in squares["corner"]:
+    if board[i[0]][i[1]] == player: n+=1
   return n
 
 # RETURNS HOW "CONNECTED" A PLAYERS STONES ARE, I.E HOW MANY SIDES OF YOUR 
@@ -327,42 +333,48 @@ def weighMove(move, player, board):
   if player == 1: enemy = 2 
   else: enemy=1
   newBoard = flipSquares(move, player, board)
-  # INITIALIZE WEIGHT BY MULTIPLYING THE NUMBER OF NEW STABLE SQUARES BY 100
-  weight = (numStable(player, newBoard) - numStable(player, board)) * 100
+  # INITIALIZE WEIGHT BY MULTIPLYING THE NUMBER OF STABLE SQUARES IN THE NEW BOARD BY 40
+  weight = numStable(player, newBoard) * 40
+  initweight = weight
   for i in move:
-    if i in squares["corner"]: weight += 100
+    if i in squares["corner"]: weight= float('inf')
     # IF THE NEW STONE IS A C-SQUARE OR AN X-SQUARE, WEIGHT IT DOWN, 
     # UNLESS ITS STABLE, IN WHICH CASE WEIGHT IT UP
     elif i in squares["csquare"]: 
-      if isStable(i,player,newBoard): weight+=10
-      else: weight-=20
+      if isStable(i,player,newBoard): weight+=2500
+      else: weight = float('-inf')
     elif i in squares["xsquare"]:
-      if isStable(i,player,newBoard): weight+=25
-      else: weight-=50
-    elif i in squares["inwall"]: weight+= 5
-    elif i in squares["outwall"]: weight+= 10
-    else: weight -= 1.5
+      if isStable(i,player,newBoard): weight+=5000
+      else: weight = float('-inf')
+    elif i in squares["inwall"]: weight+=250
+    elif i in squares["outwall"]: weight+=500
+    elif 1 in i and not isStable(i,player,newBoard): weight-=1000
+    elif numCorners(player, newBoard) == 0: weight +=200
+    else: weight -= 200
   # REDUCE WEIGHT FOR ALLOWING OPPONENT MOVES
-  weight -= len(findMoves(player, newBoard))
+  weight -= len(findMoves(enemy, newBoard))
   # REDUCE WEIGHT FOR INCREASING OPPONENT CONNECTIVITY, ADD WEIGHT FOR INCREASING PERSONAL CONNECTIVITY
-  weight -= stoneConnectivity(enemy, newBoard) - stoneConnectivity(enemy, board)
-  weight += stoneConnectivity(player, newBoard) - stoneConnectivity(player, board)
+  weight -= stoneConnectivity(enemy, newBoard) / 5
+  weight += stoneConnectivity(player, newBoard) / 5
   # REDUCE WEIGHT FOR MOVES THAT INCREASE NUMBER OF FRONTIER DISCS,
-  # INCREASE WEIGHT FOR MOVES THAT INCREASE NUMBER OF INTERIOR DISCS
-  weight -= (numFrontier(player, newBoard) - numFrontier(player, board))
-  weight += (numInterior(player, newBoard) - numInterior(player, board))
+  # INCREASE WEIGHT FOR MOVES THAT INCREASE NUMBER OF INTERIOR DISCS,
+  # THEN DO THE REVERSE FOR THE ENEMIES PIECES
+  weight -= (numFrontier(player, newBoard) * 2.5) 
+  weight += (numInterior(player, newBoard) * 5)
+  weight += (numFrontier(enemy, newBoard) * 2.5)
+  weight -= (numInterior(enemy, newBoard) * 5)
   return weight
 
-# CALCULATE AND RETURN THE "BEST" MOVE OUT OF ALL POSSIBLE MOVES FOR A PLAYER
+# CALCULATE AND RETURN THE "BEST" MOVE OUT OF ALL POSSIBLE MOVES FOR A PLAYER, 
+# RETURNS LIST OF THE MOVE AND ITS WEIGHT
 def findBest(player, board):
   moves = findMoves(player, board)
   weights = {}
   if not moves: return None
   for i in moves:
-    # IF THERE ARE 15 OR LESS OPEN SQUARES, FLIPPING STONES IS GOOD INSTEAD OF BAD
-    if openSquares(board) <=15: 
-      weight = weighMove(i[1], player, board) + i[0]
+    # IF THERE ARE 25 OR LESS OPEN SQUARES, FLIPPING STONES IS GOOD INSTEAD OF BAD
+    if openSquares(board) <=30 and numStable(player, board) >=20 and numCorners(player, board) >=2: 
+      weight = weighMove(i[1], player, board) + (i[0] * 10)
     else: weight = weighMove(i[1], player, board) - i[0]
     weights[str(i[1][-1])]= weight
-  print(max(weights.values()))
-  return max(weights, key=weights.get)
+  return [max(weights, key=weights.get), max(weights.values())]

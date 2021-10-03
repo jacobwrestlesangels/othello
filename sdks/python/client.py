@@ -6,7 +6,7 @@ import socket
 
 def get_move(player, board):
   # RETURNS THE "BEST" MOVE ... LOOK TO 'helper.py' FOR MORE DETAILS HOW :)
-  return findBest(player, board)
+  return findBest(player, board)[0]
 
 def prepare_response(move):
   response = '{}\n'.format(move).encode()
