@@ -3,10 +3,9 @@ from helper import findBest
 import sys
 import json
 import socket
-import random
-
 
 def get_move(player, board):
+  # RETURNS THE "BEST" MOVE ... LOOK TO 'helper.py' FOR MORE DETAILS HOW :)
   return findBest(player, board)
 
 def prepare_response(move):
