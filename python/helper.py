@@ -334,7 +334,7 @@ def weighMove(move, player, board):
   else: enemy=1
   newBoard = flipSquares(move, player, board)
   # INITIALIZE WEIGHT BY MULTIPLYING THE NUMBER OF STABLE SQUARES IN THE NEW BOARD BY 40
-  weight = numStable(player, newBoard) * 40
+  weight = numStable(player, newBoard) * 50
   initweight = weight
   for i in move:
     if i in squares["corner"]: weight = float('inf')
@@ -344,14 +344,14 @@ def weighMove(move, player, board):
       if isStable(i,player,newBoard): weight+=2500
       else: weight = float('-inf')
     elif i in squares["xsquare"]:
-      if isStable(i,player,newBoard): weight+=5000
+      if isStable(i,player, newBoard): weight+=5000
       else: weight = float('-inf')
     elif i in squares["inwall"]: weight+=250
     elif i in squares["outwall"]: weight+=500
     # IF THE STONE IS NEXT TO A WALL AND ITS NOT STABLE, WEIGHT IT DOWN
-    elif 1 in i and not isStable(i,player,newBoard): weight-=1000
+    elif 1 in i and not isStable(i,player, newBoard): weight-=1000
     # RAISE WEIGHT FOR PLAYING IN THE CENTER IF YOU HAVE 20 OR LESS STABLE STONES
-    elif numStable(player, newBoard) <=20: weight +=1000
+    elif numStable(player, board) <=20: weight +=1000
     else: weight -= 200
   # REDUCE WEIGHT FOR ALLOWING OPPONENT MOVES
   weight -= len(findMoves(enemy, newBoard)) * 2
@@ -374,9 +374,10 @@ def findBest(player, board):
   weights = {}
   if not moves: return None
   for i in moves:
-    # IF THERE ARE 25 OR LESS OPEN SQUARES, FLIPPING STONES IS GOOD INSTEAD OF BAD
-    if openSquares(board) <=30 and numStable(player, board) >=20 and numCorners(player, board) >=2: 
+    # IF THERE ARE 30 OR LESS OPEN SQUARES, AND YOU HAVE 20 OR MORE STABLE STONES, 
+    # AND YOU HAVE 2 OR MORE CORNERS, FLIPPING STONES IS GOOD INSTEAD OF BAD
+    if openSquares(board) <=30 and numStable(player, board) >=15 and numCorners(player, board) >=2: 
       weight = weighMove(i[1], player, board) + (i[0] * 10)
-    else: weight = weighMove(i[1], player, board) - i[0]
+    else: weight = weighMove(i[1], player, board) - (i[0] * 10)
     weights[str(i[1][-1])]= weight
   return [max(weights, key=weights.get), max(weights.values())]
