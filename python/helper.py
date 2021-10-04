@@ -337,8 +337,8 @@ def weighMove(move, player, board):
   weight = numStable(player, newBoard) * 40
   initweight = weight
   for i in move:
-    if i in squares["corner"]: weight= float('inf')
-    # IF THE NEW STONE IS A C-SQUARE OR AN X-SQUARE, WEIGHT IT DOWN, 
+    if i in squares["corner"]: weight = float('inf')
+    # IF THE STONE IS A C-SQUARE OR AN X-SQUARE, WEIGHT IT DOWN, 
     # UNLESS ITS STABLE, IN WHICH CASE WEIGHT IT UP
     elif i in squares["csquare"]: 
       if isStable(i,player,newBoard): weight+=2500
@@ -348,8 +348,10 @@ def weighMove(move, player, board):
       else: weight = float('-inf')
     elif i in squares["inwall"]: weight+=250
     elif i in squares["outwall"]: weight+=500
+    # IF THE STONE IS NEXT TO A WALL AND ITS NOT STABLE, WEIGHT IT DOWN
     elif 1 in i and not isStable(i,player,newBoard): weight-=1000
-    elif numCorners(player, newBoard) == 0: weight +=200
+    # RAISE WEIGHT FOR PLAYING IN THE CENTER IF YOU HAVE 20 OR LESS STABLE STONES
+    elif numStable(player, newBoard) <=20: weight +=1000
     else: weight -= 200
   # REDUCE WEIGHT FOR ALLOWING OPPONENT MOVES
   weight -= len(findMoves(enemy, newBoard)) * 2
